@@ -1,27 +1,52 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Camera, Upload, AlertTriangle, User, Mail, Phone, Lock } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertTriangle,
+  Camera,
+} from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
-// Firebase imports
-import { db } from '@/lib/firebase';
+import { db, storage, auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ReportForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+
   const [formData, setFormData] = useState({
     animalType: '',
     condition: '',
     location: '',
     description: '',
-    photo: null,
+    photo: null as File | null,
   });
 
   const [authData, setAuthData] = useState({
@@ -31,94 +56,54 @@ const ReportForm: React.FC = () => {
     phone: '',
   });
 
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    if (!isAuthenticated) {
-      toast.error("Please login or register to submit a report");
-      return;
+  const handleAuthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAuthData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData((prev) => ({ ...prev, photo: e.target.files![0] }));
     }
+  };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      await addDoc(collection(db, 'reports'), {
-        animalType: formData.animalType,
-        condition: formData.condition,
-        location: formData.location,
-        description: formData.description,
-        photo: null, // Optional photo field (not implemented yet)
-        timestamp: Timestamp.now(),
-        user: {
-          name: authData.name || '',
-          email: authData.email || '',
-          phone: authData.phone || '',
-        },
-      });
-
-      toast.success("Report submitted successfully! Nearby organizations have been notified.");
-
-      setFormData({
-        animalType: '',
-        condition: '',
-        location: '',
-        description: '',
-        photo: null,
-      });
-    } catch (error) {
-      console.error("Error submitting report:", error);
-      toast.error("Failed to submit report. Please try again.");
+      await signInWithEmailAndPassword(auth, authData.email, authData.password);
+      setIsAuthenticated(true);
+      toast.success("Login successful! You can now submit a report.");
+    } catch (error: any) {
+      toast.error(error.message || "Login failed.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAuthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setAuthData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!authData.email || !authData.password) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    try {
+      await createUserWithEmailAndPassword(auth, authData.email, authData.password);
       setIsAuthenticated(true);
-      setIsSubmitting(false);
-      toast.success("Login successful! You can now submit a report.");
-    }, 1000);
-  };
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!authData.email || !authData.password || !authData.name) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsAuthenticated(true);
-      setIsSubmitting(false);
       toast.success("Registration successful! You can now submit a report.");
-    }, 1000);
+    } catch (error: any) {
+      toast.error(error.message || "Registration failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleLogout = () => {
@@ -130,6 +115,54 @@ const ReportForm: React.FC = () => {
       phone: '',
     });
     toast.info("You have been logged out");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!isAuthenticated) {
+      toast.error("Please login or register to submit a report");
+      return;
+    }
+
+    setIsSubmitting(true);
+    let photoURL = null;
+
+    try {
+      if (formData.photo) {
+        const imageRef = ref(storage, `report_photos/${Date.now()}_${formData.photo.name}`);
+        const snapshot = await uploadBytes(imageRef, formData.photo);
+        photoURL = await getDownloadURL(snapshot.ref);
+      }
+
+      await addDoc(collection(db, 'reports'), {
+        animalType: formData.animalType,
+        condition: formData.condition,
+        location: formData.location,
+        description: formData.description,
+        photo: photoURL,
+        timestamp: Timestamp.now(),
+        user: {
+          name: authData.name || '',
+          email: authData.email || '',
+          phone: authData.phone || '',
+        },
+      });
+
+      toast.success("Report submitted successfully!");
+      setFormData({
+        animalType: '',
+        condition: '',
+        location: '',
+        description: '',
+        photo: null,
+      });
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      toast.error("Failed to submit report.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -147,104 +180,28 @@ const ReportForm: React.FC = () => {
 
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center">
-                    <Mail className="w-4 h-4 mr-1" />
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    placeholder="your@email.com"
-                    value={authData.email}
-                    onChange={handleAuthInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="flex items-center">
-                    <Lock className="w-4 h-4 mr-1" />
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    name="password"
-                    placeholder="••••••••"
-                    value={authData.password}
-                    onChange={handleAuthInputChange}
-                  />
-                </div>
-
+                <Label>Email</Label>
+                <Input type="email" name="email" value={authData.email} onChange={handleAuthInputChange} />
+                <Label>Password</Label>
+                <Input type="password" name="password" value={authData.password} onChange={handleAuthInputChange} />
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Processing..." : "Login"}
+                  {isSubmitting ? "Logging in..." : "Login"}
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reg-name" className="flex items-center">
-                    <User className="w-4 h-4 mr-1" />
-                    Full Name
-                  </Label>
-                  <Input
-                    id="reg-name"
-                    name="name"
-                    placeholder="Your full name"
-                    value={authData.name}
-                    onChange={handleAuthInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email" className="flex items-center">
-                    <Mail className="w-4 h-4 mr-1" />
-                    Email
-                  </Label>
-                  <Input
-                    id="reg-email"
-                    type="email"
-                    name="email"
-                    placeholder="your@email.com"
-                    value={authData.email}
-                    onChange={handleAuthInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reg-phone" className="flex items-center">
-                    <Phone className="w-4 h-4 mr-1" />
-                    Phone (Optional)
-                  </Label>
-                  <Input
-                    id="reg-phone"
-                    name="phone"
-                    placeholder="Your phone number"
-                    value={authData.phone}
-                    onChange={handleAuthInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password" className="flex items-center">
-                    <Lock className="w-4 h-4 mr-1" />
-                    Password
-                  </Label>
-                  <Input
-                    id="reg-password"
-                    type="password"
-                    name="password"
-                    placeholder="••••••••"
-                    value={authData.password}
-                    onChange={handleAuthInputChange}
-                  />
-                </div>
-
+                <Label>Name</Label>
+                <Input name="name" value={authData.name} onChange={handleAuthInputChange} />
+                <Label>Email</Label>
+                <Input type="email" name="email" value={authData.email} onChange={handleAuthInputChange} />
+                <Label>Phone</Label>
+                <Input name="phone" value={authData.phone} onChange={handleAuthInputChange} />
+                <Label>Password</Label>
+                <Input type="password" name="password" value={authData.password} onChange={handleAuthInputChange} />
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Processing..." : "Create Account"}
+                  {isSubmitting ? "Creating..." : "Create Account"}
                 </Button>
               </form>
             </TabsContent>
@@ -267,14 +224,14 @@ const ReportForm: React.FC = () => {
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Welcome, {authData.name || authData.email}! Thank you for reporting an animal in distress.
+          Welcome, {authData.name || authData.email}!
         </p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="animalType">Animal Type</Label>
+              <Label>Animal Type</Label>
               <Select value={formData.animalType} onValueChange={(value) => handleSelectChange('animalType', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select animal type" />
@@ -289,7 +246,7 @@ const ReportForm: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="condition">Condition</Label>
+              <Label>Condition</Label>
               <Select value={formData.condition} onValueChange={(value) => handleSelectChange('condition', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select condition" />
@@ -305,23 +262,18 @@ const ReportForm: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1" />
-              Location
-            </Label>
+            <Label>Location</Label>
             <Input
-              id="location"
               name="location"
-              placeholder="Enter address or use current location"
+              placeholder="Enter location"
               value={formData.location}
               onChange={handleInputChange}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label>Description</Label>
             <Textarea
-              id="description"
               name="description"
               placeholder="Describe the animal and situation"
               rows={4}
@@ -333,14 +285,17 @@ const ReportForm: React.FC = () => {
           <div className="space-y-2">
             <Label htmlFor="photo" className="flex items-center">
               <Camera className="w-4 h-4 mr-1" />
-              Photo (Optional)
+              Upload Photo (Optional)
             </Label>
-            <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors">
-              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Drag and drop or click to upload a photo
-              </p>
-            </div>
+            <Input
+              id="photo"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+            {formData.photo && (
+              <p className="text-sm text-muted-foreground">Selected: {formData.photo.name}</p>
+            )}
           </div>
 
           <CardFooter className="px-0 pt-4">

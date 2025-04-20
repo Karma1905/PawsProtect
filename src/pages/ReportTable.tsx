@@ -1,8 +1,22 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ReportInfo } from "@/types/index";
-import { collection, deleteDoc, doc, getDocs, orderBy, query, where } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -13,7 +27,7 @@ const ReportTable: React.FC = () => {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const q = query(collection(db, 'reports'), orderBy('timestamp', 'desc'));
+        const q = query(collection(db, "reports"), orderBy("timestamp", "desc"));
         const snapshot = await getDocs(q);
 
         const reportsData: ReportInfo[] = [];
@@ -29,21 +43,21 @@ const ReportTable: React.FC = () => {
             photo: data.photo || null,
             timestamp: data.timestamp,
             user: {
-              name: '',
+              name: "",
               email: data.user.email,
-              phone: '',
+              phone: "",
             },
           };
 
           const userQuery = query(
-            collection(db, 'users'),
-            where('email', '==', data.user.email)
+            collection(db, "users"),
+            where("email", "==", data.user.email)
           );
           const userSnapshot = await getDocs(userQuery);
           if (!userSnapshot.empty) {
             const userData = userSnapshot.docs[0].data();
-            report.user.name = userData.name || 'Unknown';
-            report.user.phone = userData.phone || 'Unknown';
+            report.user.name = userData.name || "Unknown";
+            report.user.phone = userData.phone || "Unknown";
           }
 
           reportsData.push(report);
@@ -51,7 +65,7 @@ const ReportTable: React.FC = () => {
 
         setReports(reportsData);
       } catch (error) {
-        console.error('Error fetching reports:', error);
+        console.error("Error fetching reports:", error);
       }
     };
 
@@ -60,9 +74,9 @@ const ReportTable: React.FC = () => {
 
   const handleDeleteReport = async (reportId: string) => {
     try {
-      const reportDocRef = doc(db, 'reports', reportId);
+      const reportDocRef = doc(db, "reports", reportId);
       await deleteDoc(reportDocRef);
-      setReports(prev => prev.filter(report => report.id !== reportId));
+      setReports((prev) => prev.filter((report) => report.id !== reportId));
 
       toast({
         title: "Report deleted",
@@ -70,7 +84,7 @@ const ReportTable: React.FC = () => {
         variant: "default",
       });
     } catch (error) {
-      console.error('Error deleting report:', error);
+      console.error("Error deleting report:", error);
       toast({
         title: "Error",
         description: "Something went wrong while deleting the report.",
@@ -90,6 +104,7 @@ const ReportTable: React.FC = () => {
           <table className="min-w-full table-auto border-collapse text-white">
             <thead>
               <tr className="bg-dark-700">
+                <th className="p-4 text-left">Image</th>
                 <th className="p-4 text-left">Name</th>
                 <th className="p-4 text-left">Email</th>
                 <th className="p-4 text-left">Location</th>
@@ -102,14 +117,30 @@ const ReportTable: React.FC = () => {
             <tbody>
               {reports.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center p-4">No reports available at the moment.</td>
+                  <td colSpan={8} className="text-center p-4">
+                    No reports available at the moment.
+                  </td>
                 </tr>
               ) : (
                 reports.map((report) => (
                   <tr key={report.id} className="border-b">
-                    <td className="p-4">{report.user?.name || 'Unknown'}</td>
                     <td className="p-4">
-                      <a href={`mailto:${report.user?.email}`} className="text-blue-500">
+                      {report.photo ? (
+                        <img
+                          src={report.photo}
+                          alt="Report"
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                      ) : (
+                        <span className="text-muted-foreground">No Image</span>
+                      )}
+                    </td>
+                    <td className="p-4">{report.user?.name || "Unknown"}</td>
+                    <td className="p-4">
+                      <a
+                        href={`mailto:${report.user?.email}`}
+                        className="text-blue-500"
+                      >
                         {report.user?.email}
                       </a>
                     </td>
