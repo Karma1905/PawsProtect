@@ -38,8 +38,8 @@ const Footer: React.FC = () => {
                 { path: '/report', label: 'Report Animal' },
                 { path: '/adopt', label: 'Adopt' },
                 { path: '/veterinary', label: 'Veterinary Services' },
-                { path: '/team', label: 'Our Team' }
-                { path: '/shop', label: 'Shop' }
+                { path: '/team', label: 'Our Team' },
+                { path: '/shop', label: 'Shop' },
               ].map(({ path, label }) => (
                 <li key={path}>
                   <Link 
