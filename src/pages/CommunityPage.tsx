@@ -1,40 +1,33 @@
-
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MessageSquare, Heart, UserPlus, Clock, Check } from 'lucide-react';
-import React, { useState } from 'react';
+import { Calendar, Users, MessageSquare, Heart, UserPlus, Clock, Plus, Image as ImageIcon } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import NewDiscussionDialog from '@/components/community/NewDiscussionDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 const CommunityPage: React.FC = () => {
-  const [joinedEvents, setJoinedEvents] = useState<number[]>([]);
+  const { toast } = useToast();
+  const [isNewDiscussionOpen, setIsNewDiscussionOpen] = useState(false);
+  const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
 
-  const [eventAttendees, setEventAttendees] = useState({
-    1: 45,
-    2: 28,
-    3: 32
-  });
+  const [postTitle, setPostTitle] = useState('');
+  const [postDescription, setPostDescription] = useState('');
+  const [postDate, setPostDate] = useState('');
+  const [postImage, setPostImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const handleJoinEvent = (eventId: number) => {
-    const isJoined = joinedEvents.includes(eventId);
-    
-    if (isJoined) {
-      // If already joined, remove from joined events and decrease attendee count
-      setJoinedEvents(prev => prev.filter(id => id !== eventId));
-      setEventAttendees(current => ({
-        ...current,
-        [eventId]: current[eventId] - 1
-      }));
-    } else {
-      // If not joined, add to joined events and increase attendee count
-      setJoinedEvents(prev => [...prev, eventId]);
-      setEventAttendees(current => ({
-        ...current,
-        [eventId]: current[eventId] + 1
-      }));
-    }
-  };
-  
-  // Sample community events data
   const events = [
     {
       id: 1,
@@ -43,7 +36,7 @@ const CommunityPage: React.FC = () => {
       time: "10:00 AM - 4:00 PM",
       location: "Central Park",
       description: "Join us for a day of pet adoptions, featuring dogs and cats from local shelters.",
-      //attendees: 45,
+      attendees: 45,
       image: "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80"
     },
     {
@@ -53,7 +46,7 @@ const CommunityPage: React.FC = () => {
       time: "2:00 PM - 5:00 PM",
       location: "Community Center",
       description: "Learn effective training techniques from professional dog trainers.",
-      //attendees: 28,
+      attendees: 28,
       image: "https://images.unsplash.com/photo-1551887196-72e32bfc7bf3?auto=format&fit=crop&w=800&q=80"
     },
     {
@@ -63,12 +56,11 @@ const CommunityPage: React.FC = () => {
       time: "9:00 AM - 12:00 PM",
       location: "Animal Welfare Society",
       description: "Essential first aid skills for pet owners. Certificate provided upon completion.",
-      //attendees: 32,
+      attendees: 32,
       image: "https://images.unsplash.com/photo-1597843786411-a7fa8ad44a95?auto=format&fit=crop&w=800&q=80"
     }
   ];
 
-  // Sample forum discussions data
   const discussions = [
     {
       id: 1,
@@ -104,8 +96,56 @@ const CommunityPage: React.FC = () => {
     }
   ];
 
+  const handleJoinEvent = () => {
+    toast({
+      title: "Event Joined!",
+      description: "You have successfully joined this event.",
+    });
+  };
+
+  const handleSupportCause = () => {
+    toast({
+      title: "Thank You!",
+      description: "Thank you for supporting our cause.",
+    });
+  };
+
+  const handleBecomeMember = () => {
+    toast({
+      title: "Welcome!",
+      description: "Thank you for becoming a member.",
+    });
+  };
+
+  const handleCreatePost = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPostDialogOpen(false);
+    setPostTitle('');
+    setPostDescription('');
+    setPostDate('');
+    setPostImage(null);
+    setImagePreview(null);
+    toast({
+      title: "Post created!",
+      description: "Your event/service post has been shared with the community.",
+    });
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPostImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setPostImage(null);
+    setImagePreview(null);
+  };
+
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 relative">
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold mb-4">Animal Welfare Community</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -152,25 +192,14 @@ const CommunityPage: React.FC = () => {
                 
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  {/* <span>{event.attendees} attending</span> */}
-                  <span>{eventAttendees[event.id]} attending</span>
+                  <span>{event.attendees} attending</span>
                 </div>
               </CardContent>
               
               <CardFooter className="border-t bg-muted/20 p-4">
-                <Button 
-                  className={`w-full ${joinedEvents.includes(event.id) ? 'bg-green-500 hover:bg-green-600' : 'bg-primary'}`}
-                  onClick={() => handleJoinEvent(event.id)}
-                >
-                  {joinedEvents.includes(event.id) ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Event Joined
-                    </>
-                  ) : (
-                    'Join Event'
-                  )}
-                </Button> 
+                <Button className="w-full bg-primary" onClick={handleJoinEvent}>
+                  Join Event
+                </Button>
               </CardFooter>
             </Card>
           ))}
@@ -180,10 +209,16 @@ const CommunityPage: React.FC = () => {
       <div className="mb-16">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Community Forum</h2>
-          <Button variant="outline">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Start New Discussion
-          </Button>
+          <div className="flex gap-4">
+            <Button onClick={() => setIsNewDiscussionOpen(true)}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Start New Discussion
+            </Button>
+            <Button onClick={() => setIsPostDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Post
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -227,16 +262,109 @@ const CommunityPage: React.FC = () => {
           Connect with fellow animal lovers, share your experiences, and make a difference in animal welfare.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="bg-primary">
+          <Button size="lg" className="bg-primary" onClick={handleBecomeMember}>
             <UserPlus className="h-4 w-4 mr-2" />
             Become a Member
           </Button>
-          <Button size="lg" variant="outline">
+          <Button size="lg" variant="outline" onClick={handleSupportCause}>
             <Heart className="h-4 w-4 mr-2" />
             Support Our Cause
           </Button>
         </div>
       </div>
+
+      <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
+        <DialogContent>
+          <form onSubmit={handleCreatePost} className="space-y-5">
+            <DialogHeader>
+              <DialogTitle>Create New Post</DialogTitle>
+            </DialogHeader>
+            <div>
+              <label htmlFor="post-title" className="block mb-1 text-sm font-medium">
+                Title
+              </label>
+              <Input
+                id="post-title"
+                placeholder="What's the event or service?"
+                value={postTitle}
+                onChange={e => setPostTitle(e.target.value)}
+                required
+                maxLength={70}
+              />
+            </div>
+            <div>
+              <label htmlFor="post-desc" className="block mb-1 text-sm font-medium">
+                Description
+              </label>
+              <Textarea
+                id="post-desc"
+                placeholder="Describe your event or service"
+                value={postDescription}
+                onChange={e => setPostDescription(e.target.value)}
+                rows={4}
+                required
+                maxLength={300}
+              />
+            </div>
+            <div>
+              <label htmlFor="post-date" className="block mb-1 text-sm font-medium">
+                Date & Time (optional)
+              </label>
+              <Input
+                id="post-date"
+                type="datetime-local"
+                value={postDate}
+                onChange={e => setPostDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <p className="block mb-1 text-sm font-medium">Image (optional)</p>
+              <div className="flex items-center gap-3">
+                <label htmlFor="post-image" className="inline-flex items-center cursor-pointer">
+                  <Input
+                    id="post-image"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
+                  <span className="flex items-center px-3 py-1.5 bg-muted hover:bg-accent text-sm rounded shadow-sm">
+                    <ImageIcon className="w-5 h-5 mr-1" />
+                    {postImage ? "Change Image" : "Add Image"}
+                  </span>
+                </label>
+                {postImage && (
+                  <Button type="button" size="sm" variant="outline" onClick={handleRemoveImage}>
+                    Remove
+                  </Button>
+                )}
+              </div>
+              {imagePreview && (
+                <div className="mt-3 flex flex-col items-center">
+                  <img
+                    src={imagePreview}
+                    alt="Selected"
+                    className="w-40 h-40 object-cover rounded border"
+                  />
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit">Post</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <NewDiscussionDialog 
+        open={isNewDiscussionOpen} 
+        onOpenChange={setIsNewDiscussionOpen} 
+      />
     </div>
   );
 };

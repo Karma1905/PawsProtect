@@ -20,6 +20,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { AuthProvider } from "./context/AuthContext";
 import ShopPage from "./pages/ShopPage";
+import FloatingChatButton from "./components/chat/FloatingChatButton";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ function App() {
                 </Routes>
               </main>
               <Footer />
+              <FloatingChatButton/>
             </div>
           </BrowserRouter>
         </QueryClientProvider>
