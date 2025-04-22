@@ -19,6 +19,7 @@ import AdminPage from "./pages/AdminPage";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { AuthProvider } from "./context/AuthContext";
+import ShopPage from "./pages/ShopPage";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ function App() {
                   <Route path="/adopt/:id" element={<AdoptDetailsPage />} />
                   <Route path="/veterinary" element={<VeterinaryPage />} />
                   <Route path="/community" element={<CommunityPage />} />
+                  <Route path="/shop" element={<ShopPage />} />
                   <Route path="/team" element={<TeamPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />

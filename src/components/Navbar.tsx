@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { PawPrint, Menu, X, AlertTriangle, Heart, Calendar, Users, User, Shield, LogIn, UserPlus } from 'lucide-react';
+import { PawPrint, Menu, X, AlertTriangle, Heart, Calendar, Users, User, Shield, LogIn, UserPlus, ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ThemeToggle from './ThemeToggle';
