@@ -31,21 +31,9 @@ const TeamPage: React.FC = () => {
   const teamMembers: TeamMember[] = [
     {
       id: 1,
-      name: "Sarah Johnson",
-      role: "Founder & Director",
-      bio: "Sarah has been passionate about animal welfare for over 15 years. She founded PawsProtect to make a lasting impact on animal lives.",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80",
-      social: {
-        twitter: "#",
-        linkedin: "#",
-        email: "sarah@pawsprotect.com"
-      }
-    },
-    {
-      id: 2,
-      name: "Dr. Michael Chen",
-      role: "Lead Veterinarian",
-      bio: "Dr. Chen brings 10 years of veterinary expertise to our team. He specializes in emergency care and rehabilitation of injured animals.",
+      name: "Arnav Das",
+      role: "Team Leader",
+      bio: "Arnav Das 10 years of veterinary expertise to our team. He specializes in emergency care and rehabilitation of injured animals.",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=300&q=80",
       social: {
         linkedin: "#",
@@ -53,10 +41,23 @@ const TeamPage: React.FC = () => {
       }
     },
     {
+      id: 2,
+      name: "Kuntal Pandya",
+      role: "Team Member",
+      bio: "Kuntal has been passionate about animal welfare for over 15 years. She founded PawsProtect to make a lasting impact on animal lives.",
+      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80",
+      social: {
+        twitter: "#",
+        linkedin: "#",
+        email: "sarah@pawsprotect.com"
+      }
+    },
+    
+    {
       id: 3,
-      name: "David Wilson",
-      role: "Rescue Coordinator",
-      bio: "David leads our animal rescue operations, coordinating teams and resources to respond quickly to animals in distress.",
+      name: "Ayush Patel",
+      role: "Team Member",
+      bio: "Ayush leads our animal rescue operations, coordinating teams and resources to respond quickly to animals in distress.",
       image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&h=300&q=80",
       social: {
         twitter: "#",
@@ -67,21 +68,9 @@ const TeamPage: React.FC = () => {
     },
     {
       id: 4,
-      name: "Maria Rodriguez",
-      role: "Adoption Specialist",
-      bio: "Maria works tirelessly to match rescued animals with their forever homes, ensuring the perfect fit for both pets and families.",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=300&h=300&q=80",
-      social: {
-        twitter: "#",
-        linkedin: "#",
-        email: "maria@pawsprotect.com"
-      }
-    },
-    {
-      id: 5,
-      name: "James Thompson",
-      role: "Community Outreach",
-      bio: "James develops and manages our educational programs, community events, and partnerships with local organizations.",
+      name: "Deepak Sharma",
+      role: "Team Member",
+      bio: "Deepak develops and manages our educational programs, community events, and partnerships with local organizations.",
       image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=300&q=80",
       social: {
         twitter: "#",
@@ -89,19 +78,6 @@ const TeamPage: React.FC = () => {
         email: "james@pawsprotect.com"
       }
     },
-    {
-      id: 6,
-      name: "Emily Patel",
-      role: "Volunteer Coordinator",
-      bio: "Emily recruits, trains, and schedules our incredible volunteers who are the backbone of our daily operations.",
-      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=300&q=80",
-      social: {
-        twitter: "#",
-        linkedin: "#",
-        github: "#",
-        email: "emily@pawsprotect.com"
-      }
-    }
   ];
 
   const filteredMembers = teamMembers.filter(member => 

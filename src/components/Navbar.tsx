@@ -27,7 +27,7 @@ const Navbar: React.FC = () => {
     { label: "Adopt", path: "/adopt", icon: Heart },
     { label: "Veterinary", path: "/veterinary", icon: Calendar },
     { label: "Community", path: "/community", icon: Users },
-    { label: "Team", path: "/team", icon: User },
+    { label: "Shop", path: "/shop", icon: ShoppingCart },
   ];
 
   const handleLogin = () => navigate("/login");
