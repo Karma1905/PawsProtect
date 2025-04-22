@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, MessageSquare, Heart, UserPlus, Clock, Plus, Image as ImageIcon } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import NewDiscussionDialog from '@/components/community/NewDiscussionDialog';
+//import NewDiscussionDialog from '@/components/community/NewDiscussionDialog';
 import {
   Dialog,
   DialogContent,
@@ -361,10 +361,7 @@ const CommunityPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <NewDiscussionDialog 
-        open={isNewDiscussionOpen} 
-        onOpenChange={setIsNewDiscussionOpen} 
-      />
+      <Dialog open={isNewDiscussionOpen} onOpenChange={setIsNewDiscussionOpen} />
     </div>
   );
 };
