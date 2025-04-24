@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type Theme = 'light' | 'dark';
+type Theme = 'dark';  // Only support dark theme
 
 interface ThemeContextType {
   theme: Theme;
@@ -11,15 +10,15 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Check if user has a saved preference or use system preference
+  // Set default theme to dark
   const getInitialTheme = (): Theme => {
     const savedTheme = localStorage.getItem('paws_protect_theme') as Theme;
     if (savedTheme) {
       return savedTheme;
     }
     
-    // Use system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // Default to dark theme
+    return 'dark';
   };
 
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
@@ -28,21 +27,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('paws_protect_theme', theme);
     
-    // Apply or remove dark class on document
+    // Apply dark class on document
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
     }
   }, [theme]);
 
-  // Listen for system theme changes
+  // Listen for system theme changes, but only apply dark theme
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
     const handleChange = () => {
       if (!localStorage.getItem('paws_protect_theme')) {
-        setTheme(mediaQuery.matches ? 'dark' : 'light');
+        setTheme(mediaQuery.matches ? 'dark' : 'dark');  // Only keep dark
       }
     };
     
@@ -50,8 +47,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  // Only toggle to dark theme (no light theme support)
   const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    setTheme('dark');
   };
 
   return (
