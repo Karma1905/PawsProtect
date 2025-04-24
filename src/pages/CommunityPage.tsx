@@ -1,22 +1,49 @@
+// src/pages/CommunityPage.tsx
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, MessageSquare, Check } from "lucide-react";
-import PostForm from "../components/PostForm";
-import DiscussionForm from "../components/DiscussionForm";
-import { useToast } from "@/hooks/use-toast";
-import { db } from "../lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { Button } from "@/components/ui/button"; // Your UI button component
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"; // UI card components
+import { Badge } from "@/components/ui/badge"; // Badge UI component
+import { Calendar, Users, MessageSquare, Check } from "lucide-react"; // Icons for UI
+import PostForm from "../components/PostForm"; // Post form for adding events
+import DiscussionForm from "../components/DiscussionForm"; // Discussion form for creating discussions
+import { useToast } from "@/hooks/use-toast"; // Toast notifications for success/error
+import { db } from "../lib/firebase"; // Firebase configuration
+import { collection, getDocs, doc, getDoc } from "firebase/firestore"; // Firestore methods
+import { useAuth } from "@/hooks/useAuth"; // Custom hook to get the authenticated user
 
 const CommunityPage: React.FC = () => {
-  const { toast } = useToast();
-  const [showPostForm, setShowPostForm] = useState(false);
-  const [showDiscussionForm, setShowDiscussionForm] = useState(false);
+  const { user } = useAuth(); // Get the current authenticated user
+  const { toast } = useToast(); // Toast for notifications
+  const [isAdmin, setIsAdmin] = useState(false); // Track if the user is an admin
+  const [showPostForm, setShowPostForm] = useState(false); // State to control post form visibility
+  const [showDiscussionForm, setShowDiscussionForm] = useState(false); // State to control discussion form visibility
   const [discussions, setDiscussions] = useState<any[]>([]); // State for fetched discussions
-  const [events, setEvents] = useState<any[]>([]); // State for fetched events (posts)
-  const [joinedEvents, setJoinedEvents] = useState<number[]>([]); // State to track joined events
-  const [eventAttendees, setEventAttendees] = useState<any>({}); // Updated state to dynamically track event attendees
+  const [events, setEvents] = useState<any[]>([]); // State for fetched events
+  const [joinedEvents, setJoinedEvents] = useState<number[]>([]); // Track joined events by user
+  const [eventAttendees, setEventAttendees] = useState<any>({}); // Track attendees for each event
+
+  // Fetch user role (admin/user) from Firestore
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid)); // Get user data
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setIsAdmin(userData?.role === "admin"); // Set isAdmin based on user role
+          }
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+          toast({
+            title: "Error",
+            description: "Unable to fetch user role.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+    fetchUserRole();
+  }, [user, toast]);
 
   // Fetch discussions from Firestore
   const fetchDiscussions = async () => {
@@ -26,7 +53,7 @@ const CommunityPage: React.FC = () => {
         id: doc.id,
         ...doc.data(),
       }));
-      setDiscussions(discussionsList); // Update state with fetched discussions
+      setDiscussions(discussionsList); // Update discussions state
     } catch (error) {
       console.error("Error fetching discussions:", error);
       toast({
@@ -45,7 +72,7 @@ const CommunityPage: React.FC = () => {
         id: doc.id,
         ...doc.data(),
       }));
-      setEvents(eventsList); // Update state with fetched events
+      setEvents(eventsList); // Update events state
 
       // Initialize event attendees count for each event
       const initialAttendees: any = {};
@@ -63,11 +90,7 @@ const CommunityPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDiscussions(); // Fetch discussions on page load
-    fetchEvents(); // Fetch events (posts) on page load
-  }, []);
-
+  // Handle user joining or leaving an event
   const handleJoinEvent = (eventId: number) => {
     const isJoined = joinedEvents.includes(eventId);
 
@@ -86,6 +109,7 @@ const CommunityPage: React.FC = () => {
     }
   };
 
+  // Callback for successful event creation
   const handlePostFormSuccess = () => {
     toast({
       title: "Event Created",
@@ -95,6 +119,7 @@ const CommunityPage: React.FC = () => {
     fetchEvents(); // Re-fetch events after creating a new one
   };
 
+  // Callback for successful discussion creation
   const handleDiscussionFormSuccess = () => {
     toast({
       title: "Discussion Started",
@@ -102,6 +127,11 @@ const CommunityPage: React.FC = () => {
     });
     setShowDiscussionForm(false);
   };
+
+  useEffect(() => {
+    fetchDiscussions(); // Fetch discussions when the page loads
+    fetchEvents(); // Fetch events when the page loads
+  }, []);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -113,7 +143,8 @@ const CommunityPage: React.FC = () => {
         </p>
       </div>
 
-      {showPostForm && (
+      {/* Show the Post Form modal for admins only */}
+      {isAdmin && showPostForm && (
         <PostForm
           isOpen={showPostForm}
           onOpenChange={setShowPostForm}
@@ -121,16 +152,21 @@ const CommunityPage: React.FC = () => {
         />
       )}
 
+      {/* Show the Discussion Form */}
       <DiscussionForm
         isOpen={showDiscussionForm}
         onOpenChange={setShowDiscussionForm}
         onSuccess={handleDiscussionFormSuccess}
       />
 
+      {/* Display upcoming events */}
       <div className="mb-16">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Upcoming Events</h2>
-          <Button onClick={() => setShowPostForm(true)}>Add Event</Button>
+          {/* Admins can see and click the "Add Event" button */}
+          {isAdmin && (
+            <Button onClick={() => setShowPostForm(true)}>Add Event</Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -138,7 +174,7 @@ const CommunityPage: React.FC = () => {
             <Card key={event.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="h-48 overflow-hidden">
                 <img
-                  src={event.image || "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=800"} // Show dummy image if no image provided
+                  src={event.image || "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=800"}
                   alt={event.title}
                   className="w-full h-full object-cover"
                 />
@@ -156,7 +192,7 @@ const CommunityPage: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>{eventAttendees[event.id] || 0} attending</span> {/* Default to 0 if no attendees */}
+                  <span>{eventAttendees[event.id] || 0} attending</span>
                 </div>
               </CardContent>
 
@@ -184,6 +220,7 @@ const CommunityPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Display community discussions */}
       <div className="mb-16">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Community Forum</h2>
