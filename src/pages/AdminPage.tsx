@@ -5,6 +5,7 @@ import UserManagement from '@/pages/UserManagment';
 import ReportTable from '@/pages/ReportTable';
 import PetsManagement from '@/pages/PetsManagment';
 import Appointments from '@/pages/Appointments';
+import AdoptionRequestTable from '@/pages/AdoptionRequestTable'; // import the new component
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ReportInfo, UserInfo } from '@/types';
@@ -17,6 +18,7 @@ const AdminPage: React.FC = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [reports, setReports] = useState<ReportInfo[]>([]);
+  const [adoptionRequestsCount, setAdoptionRequestsCount] = useState<number>(0); // New state to store the adoption request count
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -26,6 +28,7 @@ const AdminPage: React.FC = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
+  // Fetch users data
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -42,6 +45,7 @@ const AdminPage: React.FC = () => {
     fetchUsers();
   }, []);
 
+  // Fetch reports data
   useEffect(() => {
     const fetchReports = async () => {
       try {
@@ -90,6 +94,21 @@ const AdminPage: React.FC = () => {
     fetchReports();
   }, []);
 
+  // Fetch adoption requests count
+  useEffect(() => {
+    const fetchAdoptionRequestsCount = async () => {
+      try {
+        const adoptionRequestsCollection = collection(db, 'adoptionRequests');
+        const querySnapshot = await getDocs(adoptionRequestsCollection);
+        setAdoptionRequestsCount(querySnapshot.size); // Set the count of adoption requests
+      } catch (error) {
+        console.error('Error fetching adoption requests count:', error);
+      }
+    };
+
+    fetchAdoptionRequestsCount();
+  }, []);
+
   return (
     <div className="container py-6 mx-auto">
       <div className="flex items-center mb-6">
@@ -104,56 +123,69 @@ const AdminPage: React.FC = () => {
           <TabsTrigger value="pets">Pets</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
+          <TabsTrigger value="adoptionRequests">Adoption Requests</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{users.length}</div>
-                <p className="text-xs text-muted-foreground">+4.6% from last month</p>
-              </CardContent>
-            </Card>
+  <div className="flex gap-4">
+    <Card className="flex-1">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{users.length}</div>
+        <p className="text-xs text-muted-foreground">+4.6% from last month</p>
+      </CardContent>
+    </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Pets for Adoption</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">324</div>
-                <p className="text-xs text-muted-foreground">+12% from last month</p>
-              </CardContent>
-            </Card>
+    <Card className="flex-1">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Pets for Adoption</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">324</div>
+        <p className="text-xs text-muted-foreground">+12% from last month</p>
+      </CardContent>
+    </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Active Reports</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{reports.length}</div>
-                <p className="text-xs text-muted-foreground">-3% from last month</p>
-              </CardContent>
-            </Card>
+    <Card className="flex-1">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Active Reports</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{reports.length}</div>
+        <p className="text-xs text-muted-foreground">-3% from last month</p>
+      </CardContent>
+    </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Successful Adoptions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">87</div>
-                <p className="text-xs text-muted-foreground">+8.2% from last month</p>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+    <Card className="flex-1">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Successful Adoptions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">87</div>
+        <p className="text-xs text-muted-foreground">+8.2% from last month</p>
+      </CardContent>
+    </Card>
+
+    {/* New Adoption Requests Card */}
+    <Card className="flex-1">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Adoption Requests</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{adoptionRequestsCount}</div>
+        <p className="text-xs text-muted-foreground">+5.4% from last month</p>
+      </CardContent>
+    </Card>
+  </div>
+</TabsContent>
+
 
         {/* Users Tab */}
         <TabsContent value="users">
-          <UserManagement/>
+          <UserManagement />
         </TabsContent>
 
         {/* Pets Tab */}
@@ -169,6 +201,11 @@ const AdminPage: React.FC = () => {
         {/* Appointments Tab */}
         <TabsContent value="appointments">
           <Appointments />
+        </TabsContent>
+
+        {/* Adoption Requests Tab */}
+        <TabsContent value="adoptionRequests">
+          <AdoptionRequestTable /> {/* Display Adoption Requests */}
         </TabsContent>
       </Tabs>
     </div>

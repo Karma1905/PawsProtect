@@ -64,7 +64,7 @@ const CartPage: React.FC = () => {
       {/* Total Price and Checkout Button */}
       {cartItems.length > 0 && (
         <div className="mt-8 text-right">
-          <h2 className="text-xl font-semibold text-primary">Total Price: ${totalPrice.toFixed(2)}</h2>
+          <h2 className="text-xl font-semibold text-primary">Total Price: ₹{totalPrice.toFixed(2)}</h2>
           <Button
             variant="outline" // Using outline variant for the checkout button
             size="lg"

@@ -20,6 +20,8 @@ import Footer from "./components/Footer";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./components/CartContext"; 
 import CartPage from "./pages/CartPage";
+import AdoptionForm from "./components/AdoptionForm";
+import AdoptionFormPage from "./components/AdoptionForm";
 
 // Create the query client
 const queryClient = new QueryClient();
@@ -28,8 +30,7 @@ function App() {
   const { theme } = useTheme();
 
   return (
-    <div className="dark"> {/* Force dark theme */}
-      {/* Wrap everything inside AuthProvider and CartProvider */}
+    <div className="dark"> 
       <AuthProvider>
         <CartProvider>
           <QueryClientProvider client={queryClient}>
@@ -39,11 +40,12 @@ function App() {
               <div className="flex flex-col min-h-screen">
                 <Navbar />
                 <main className="flex-grow">
-                  <Routes>
+                <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/report" element={<ReportPage />} />
                     <Route path="/adopt" element={<AdoptPage />} />
                     <Route path="/adopt/:id" element={<AdoptDetailsPage />} />
+                    <Route path="/adopt-form/:id" element={<AdoptionForm />} />
                     <Route path="/veterinary" element={<VeterinaryPage />} />
                     <Route path="/community" element={<CommunityPage />} />
                     <Route path="/shop" element={<Shop />} />
@@ -53,7 +55,8 @@ function App() {
                     <Route path="/admin" element={<AdminPage />} />
                     <Route path="*" element={<NotFound />} />
                     <Route path="/cart" element={<CartPage />} />
-                  </Routes>
+                </Routes>
+
                 </main>
                 <Footer />
               </div>

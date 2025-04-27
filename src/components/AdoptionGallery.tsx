@@ -8,7 +8,7 @@ import { Heart, Info } from 'lucide-react';
 import { toast } from "sonner";
 import { FilterValues } from './AdoptionFilters';
 
-// Mock data - in a real app, this would come from an APIc
+
 const animals = [
   {
     id: "1",
