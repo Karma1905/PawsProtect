@@ -49,7 +49,7 @@ const Navbar: React.FC = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <PawPrint className="h-6 w-6 text-primary mr-2" />
-              <span className="font-bold text-xl">PawsProtect</span>
+              <span className="font-bold text-xl text-white">PawsProtect</span>
             </Link>
           </div>
 
@@ -60,7 +60,7 @@ const Navbar: React.FC = () => {
                 key={link.path}
                 variant="ghost"
                 asChild
-                className={`flex items-center gap-1 py-2 px-4 rounded-md transition-all ${location.pathname === link.path ? "bg-primary text-white" : "text-muted"}`}
+                className={`flex items-center gap-1 py-2 px-4 rounded-md transition-all ${location.pathname === link.path ? "bg-primary text-white" : "text-white"}`} 
               >
                 <Link to={link.path}>
                   <link.icon className="h-5 w-5" />
@@ -81,18 +81,18 @@ const Navbar: React.FC = () => {
                     <Button variant="ghost" className="relative p-0.5 rounded-full">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={user?.profileImage} alt={user?.name} />
-                        <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="text-white">{user?.name?.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="text-white"> 
+                    <DropdownMenuLabel className="text-white">{user?.name}</DropdownMenuLabel> 
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <DropdownMenuItem onClick={() => navigate("/profile")} className="text-white">
                       <User className="h-5 w-5 mr-2" /> Profile
                     </DropdownMenuItem>
                     {user?.role === 'admin' && (
-                      <DropdownMenuItem onClick={() => navigate("/admin")}>
+                      <DropdownMenuItem onClick={() => navigate("/admin")} className="text-white"> 
                         <Shield className="h-5 w-5 mr-2" /> Admin Dashboard
                       </DropdownMenuItem>
                     )}
@@ -108,7 +108,7 @@ const Navbar: React.FC = () => {
                 </DropdownMenu>
 
                 {/* Cart Icon */}
-                <Button variant="ghost" className="relative" onClick={() => navigate("/cart")}>
+                <Button variant="ghost" className="relative text-white" onClick={() => navigate("/cart")}> 
                   <ShoppingCart className="h-6 w-6" />
                   {cartItems.length > 0 && (
                     <span className="absolute top-0 right-0 inline-block w-5 h-5 bg-red-500 text-white text-xs rounded-full text-center">
@@ -119,11 +119,11 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="flex space-x-4">
-                <Button variant="outline" size="sm" onClick={handleLogin}>
+                <Button variant="outline" size="sm" onClick={handleLogin} className="text-white"> 
                   <LogIn className="h-4 w-4 mr-2" />
                   Login
                 </Button>
-                <Button size="sm" className="bg-primary" onClick={handleSignUp}>
+                <Button size="sm" className="bg-primary text-white" onClick={handleSignUp}> 
                   <UserPlus className="h-4 w-4 mr-2" />
                   Sign Up
                 </Button>
@@ -138,11 +138,11 @@ const Navbar: React.FC = () => {
               <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user?.profileImage} alt={user?.name} />
-                  <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-white">{user?.name?.charAt(0)}</AvatarFallback> 
                 </Avatar>
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={toggleMenu}>
+            <Button variant="ghost" size="icon" className="text-white" onClick={toggleMenu}> 
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
@@ -158,7 +158,7 @@ const Navbar: React.FC = () => {
                 key={link.path}
                 variant="ghost"
                 asChild
-                className={`w-full text-left py-2 rounded-md ${location.pathname === link.path ? "bg-primary text-white" : "text-muted"}`}
+                className={`w-full text-left py-2 rounded-md text-white ${location.pathname === link.path ? "bg-primary" : ""}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 <Link to={link.path}>
@@ -171,7 +171,7 @@ const Navbar: React.FC = () => {
               <>
                 <Button
                   variant="ghost"
-                  className="w-full text-left py-2"
+                  className="w-full text-left py-2 text-white" 
                   onClick={() => {
                     navigate("/profile");
                     setIsMenuOpen(false);
@@ -183,7 +183,7 @@ const Navbar: React.FC = () => {
                 {user?.role === 'admin' && (
                   <Button
                     variant="ghost"
-                    className="w-full text-left py-2"
+                    className="w-full text-left py-2 text-white"
                     onClick={() => {
                       navigate("/admin");
                       setIsMenuOpen(false);
@@ -207,14 +207,14 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <div className="flex flex-col gap-2 pt-2">
-                <Button variant="outline" className="w-full" size="sm" onClick={() => {
+                <Button variant="outline" className="w-full text-white" size="sm" onClick={() => { 
                   handleLogin();
                   setIsMenuOpen(false);
                 }}>
                   <LogIn className="h-4 w-4 mr-2" />
                   Login
                 </Button>
-                <Button className="w-full bg-primary" size="sm" onClick={() => {
+                <Button className="w-full bg-primary text-white" size="sm" onClick={() => { 
                   handleSignUp();
                   setIsMenuOpen(false);
                 }}>

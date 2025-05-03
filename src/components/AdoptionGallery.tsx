@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -7,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Info } from 'lucide-react';
 import { toast } from "sonner";
 import { FilterValues } from './AdoptionFilters';
-
+import { getAuth } from 'firebase/auth';
+import { db } from '@/lib/firebase';
 
 const animals = [
   {
@@ -107,45 +107,14 @@ interface AdoptionGalleryProps {
 const AdoptionGallery: React.FC<AdoptionGalleryProps> = ({ filters }) => {
   const [filteredAnimals, setFilteredAnimals] = useState(animals);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-  // Apply filters when they change
-  useEffect(() => {
-    let result = animals;
-    
-    // Filter by animal type
-    if (filters.animalType !== 'all') {
-      result = result.filter(animal => animal.type.toLowerCase() === filters.animalType);
-    }
-    
-    // Filter by age range
-    result = result.filter(animal => 
-      animal.age >= filters.ageRange[0] && animal.age <= filters.ageRange[1]
-    );
-    
-    // Filter by size
-    const selectedSizes = Object.entries(filters.sizes)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([size]) => size.toLowerCase());
-    
-    if (selectedSizes.length > 0) {
-      result = result.filter(animal => 
-        selectedSizes.includes(animal.size.toLowerCase())
-      );
-    }
-    
-    // Filter by special needs
-    const needsSpecialCare = Object.values(filters.specialNeeds).some(value => value);
-    if (needsSpecialCare) {
-      result = result.filter(animal => animal.specialNeeds);
-    }
-    
-    setFilteredAnimals(result);
-  }, [filters]);
+
 
   const toggleFavorite = (id: string, name: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (favorites.includes(id)) {
       setFavorites(favorites.filter(fav => fav !== id));
       toast.info(`${name} removed from favorites`);
@@ -161,8 +130,18 @@ const AdoptionGallery: React.FC<AdoptionGalleryProps> = ({ filters }) => {
         <h3 className="text-xl font-semibold">
           {filteredAnimals.length} {filteredAnimals.length === 1 ? 'Pet' : 'Pets'} Available
         </h3>
+
+        {/* Show the button to open the form only if the user is authorized */}
+        {(userRole === 'ngo' || userRole === 'admin' || userRole === 'vet') && (
+          <Button 
+            onClick={() => alert("Redirect to add animal form")} 
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-all duration-200"
+          >
+            Add Animal
+          </Button>
+        )}
       </div>
-      
+
       {filteredAnimals.length === 0 ? (
         <div className="bg-muted/30 rounded-lg p-8 text-center">
           <h3 className="text-lg font-medium mb-2">No pets match your filters</h3>
@@ -187,39 +166,21 @@ const AdoptionGallery: React.FC<AdoptionGalleryProps> = ({ filters }) => {
                     }`}
                     onClick={(e) => toggleFavorite(animal.id, animal.name, e)}
                   >
-                    <Heart className={`h-5 w-5 ${favorites.includes(animal.id) ? 'fill-rose-500' : ''}`} />
+                    <Heart />
                   </Button>
                 </div>
-                
-                <CardContent className="pt-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-bold text-lg">{animal.name}</h3>
-                      <p className="text-muted-foreground text-sm">{animal.breed}</p>
-                    </div>
-                    <Badge variant={animal.type === 'Dog' ? 'default' : 'secondary'}>
-                      {animal.type}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <Badge variant="outline">{animal.age} {animal.age === 1 ? 'year' : 'years'}</Badge>
+                <CardContent className="pt-2 pb-4 space-y-1">
+                  <h3 className="text-lg font-medium">{animal.name}</h3>
+                  <p className="text-sm text-muted-foreground">{animal.breed}</p>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-xs text-muted-foreground">{animal.age} years old</span>
                     <Badge variant="outline">{animal.gender}</Badge>
                     <Badge variant="outline">{animal.size}</Badge>
-                    {animal.specialNeeds && (
-                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
-                        Special Needs
-                      </Badge>
-                    )}
                   </div>
                 </CardContent>
-                
-                <CardFooter className="border-t pt-3">
-                  <Button variant="ghost" className="w-full" asChild>
-                    <div className="flex items-center justify-center">
-                      <Info className="h-4 w-4 mr-2" />
-                      View Details
-                    </div>
+                <CardFooter>
+                  <Button variant="link" className="text-xs text-muted-foreground">
+                    <Info className="mr-2 h-4 w-4" /> More Info
                   </Button>
                 </CardFooter>
               </Card>

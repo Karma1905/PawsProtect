@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,41 +20,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertTriangle,
-  Camera,
-} from "lucide-react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-
-import { db, storage, auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { AlertTriangle, Camera } from "lucide-react";
+import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { onAuthStateChanged } from 'firebase/auth';
+
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
 
 const ReportForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [user, setUser] = useState<any>(null);
+  const [photoURL, setPhotoURL] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     animalType: '',
     condition: '',
     location: '',
     description: '',
-    photo: null as File | null,
   });
 
-  const [authData, setAuthData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    phone: '',
-  });
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) {
+        toast.error("You must be logged in to submit a report.");
+      } else {
+        setUser(currentUser);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -65,88 +64,85 @@ const ReportForm: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAuthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setAuthData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({ ...prev, photo: e.target.files![0] }));
+      const selectedFile = e.target.files[0];
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error("File size must be less than 5MB");
+        return;
+      }
+      setFile(selectedFile);
+      setPhotoURL(URL.createObjectURL(selectedFile));
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const detectCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const locationString = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        setFormData((prev) => ({ ...prev, location: locationString }));
+        toast.success("Location detected successfully!");
+      },
+      (error) => {
+        console.error(error);
+        toast.error("Failed to detect location.");
+      }
+    );
+  };
+
+  const uploadImage = async () => {
+    if (!file) return null;
 
     try {
-      await signInWithEmailAndPassword(auth, authData.email, authData.password);
-      setIsAuthenticated(true);
-      toast.success("Login successful! You can now submit a report.");
-    } catch (error: any) {
-      toast.error(error.message || "Login failed.");
-    } finally {
-      setIsSubmitting(false);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', `report_${user.uid}_${Date.now()}`);
+
+      const response = await fetch('/api/imagekit-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Image upload failed");
+      return null;
     }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      await createUserWithEmailAndPassword(auth, authData.email, authData.password);
-      setIsAuthenticated(true);
-      toast.success("Registration successful! You can now submit a report.");
-    } catch (error: any) {
-      toast.error(error.message || "Registration failed.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setAuthData({
-      email: '',
-      password: '',
-      name: '',
-      phone: '',
-    });
-    toast.info("You have been logged out");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isAuthenticated) {
-      toast.error("Please login or register to submit a report");
+    if (!user) {
+      toast.error("You must be logged in to submit a report.");
       return;
     }
 
     setIsSubmitting(true);
-    let photoURL = null;
 
     try {
-      if (formData.photo) {
-        const imageRef = ref(storage, `report_photos/${Date.now()}_${formData.photo.name}`);
-        const snapshot = await uploadBytes(imageRef, formData.photo);
-        photoURL = await getDownloadURL(snapshot.ref);
+      let imageUrl = null;
+      if (file) {
+        imageUrl = await uploadImage();
       }
 
       await addDoc(collection(db, 'reports'), {
-        animalType: formData.animalType,
-        condition: formData.condition,
-        location: formData.location,
-        description: formData.description,
-        photo: photoURL,
+        ...formData,
+        photo: imageUrl,
         timestamp: Timestamp.now(),
         user: {
-          name: authData.name || '',
-          email: authData.email || '',
-          phone: authData.phone || '',
+          email: user.email,
+          uid: user.uid,
         },
+        status: 'pending',
       });
 
       toast.success("Report submitted successfully!");
@@ -155,8 +151,9 @@ const ReportForm: React.FC = () => {
         condition: '',
         location: '',
         description: '',
-        photo: null,
       });
+      setPhotoURL(null);
+      setFile(null);
     } catch (error) {
       console.error("Error submitting report:", error);
       toast.error("Failed to submit report.");
@@ -165,51 +162,7 @@ const ReportForm: React.FC = () => {
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <Card className="w-full max-w-md mx-auto animate-fade-in">
-        <CardHeader>
-          <CardTitle className="text-center text-primary">Authentication Required</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'register')}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <Label>Email</Label>
-                <Input type="email" name="email" value={authData.email} onChange={handleAuthInputChange} />
-                <Label>Password</Label>
-                <Input type="password" name="password" value={authData.password} onChange={handleAuthInputChange} />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Logging in..." : "Login"}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <Label>Name</Label>
-                <Input name="name" value={authData.name} onChange={handleAuthInputChange} />
-                <Label>Email</Label>
-                <Input type="email" name="email" value={authData.email} onChange={handleAuthInputChange} />
-                <Label>Phone</Label>
-                <Input name="phone" value={authData.phone} onChange={handleAuthInputChange} />
-                <Label>Password</Label>
-                <Input type="password" name="password" value={authData.password} onChange={handleAuthInputChange} />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Creating..." : "Create Account"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (!user) return null;
 
   return (
     <Card className="w-full max-w-2xl mx-auto animate-fade-in">
@@ -219,20 +172,19 @@ const ReportForm: React.FC = () => {
             <AlertTriangle className="w-5 h-5 mr-2 text-red-500" />
             Animal Distress Report
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            Logout
-          </Button>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Welcome, {authData.name || authData.email}!
-        </p>
+        <p className="text-sm text-muted-foreground">Welcome, {user.email}</p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Animal Type</Label>
-              <Select value={formData.animalType} onValueChange={(value) => handleSelectChange('animalType', value)}>
+              <Select
+                value={formData.animalType}
+                onValueChange={(value) => handleSelectChange('animalType', value)}
+                required
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select animal type" />
                 </SelectTrigger>
@@ -247,7 +199,11 @@ const ReportForm: React.FC = () => {
 
             <div className="space-y-2">
               <Label>Condition</Label>
-              <Select value={formData.condition} onValueChange={(value) => handleSelectChange('condition', value)}>
+              <Select
+                value={formData.condition}
+                onValueChange={(value) => handleSelectChange('condition', value)}
+                required
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select condition" />
                 </SelectTrigger>
@@ -263,38 +219,69 @@ const ReportForm: React.FC = () => {
 
           <div className="space-y-2">
             <Label>Location</Label>
-            <Input
-              name="location"
-              placeholder="Enter location"
-              value={formData.location}
-              onChange={handleInputChange}
-            />
+            <div className="flex gap-2">
+              <Input
+                name="location"
+                placeholder="Enter location or use Detect"
+                value={formData.location}
+                onChange={handleInputChange}
+                required
+              />
+              <Button type="button" variant="outline" onClick={detectCurrentLocation}>
+                Detect
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
               name="description"
-              placeholder="Describe the animal and situation"
+              placeholder="Describe the animal's condition and situation in detail"
               rows={4}
               value={formData.description}
               onChange={handleInputChange}
+              required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="photo" className="flex items-center">
+            <Label className="flex items-center">
               <Camera className="w-4 h-4 mr-1" />
               Upload Photo (Optional)
             </Label>
-            <Input
-              id="photo"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-            />
-            {formData.photo && (
-              <p className="text-sm text-muted-foreground">Selected: {formData.photo.name}</p>
+            <div className="flex flex-col items-center justify-center w-full">
+              <label className="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <Camera className="w-6 h-6 mb-2 text-gray-500" />
+                <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
+                <p className="text-xs text-gray-400 mt-1">PNG, JPG (Max. 5MB)</p>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </label>
+            </div>
+
+            {photoURL && (
+              <div className="mt-4">
+                <img
+                  src={photoURL}
+                  alt="Uploaded preview"
+                  className="rounded-md max-h-40 object-cover border"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhotoURL(null);
+                    setFile(null);
+                  }}
+                  className="mt-2 text-sm text-red-500 hover:text-red-700"
+                >
+                  Remove image
+                </button>
+              </div>
             )}
           </div>
 

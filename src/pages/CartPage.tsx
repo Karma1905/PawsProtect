@@ -40,7 +40,7 @@ const CartPage: React.FC = () => {
 
               <CardContent className="mt-4 space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-primary">${item.price}</span>
+                  <span className="text-lg font-semibold text-primary">₹{item.price}</span>
                   <Button
                     variant="destructive" // Destructive variant for removal button
                     size="sm"

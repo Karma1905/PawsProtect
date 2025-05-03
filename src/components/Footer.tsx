@@ -71,7 +71,7 @@ const Footer: React.FC = () => {
                 <span>Pet City, PC 12345</span>
               </li>
               <li className={isDark ? 'text-white/60' : 'text-muted-foreground'}>
-                <span>+1 (555) 123-4567</span>
+                <span>+919999999999</span>
               </li>
             </ul>
           </div>
