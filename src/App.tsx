@@ -10,7 +10,7 @@ import AdoptPage from "./pages/AdoptPage";
 import AdoptDetailsPage from "./pages/AdoptDetailsPage";
 import VeterinaryPage from "./pages/VeterinaryPage";
 import CommunityPage from "./pages/CommunityPage";
-import Shop from "./pages/shop";
+import Shop from "./pages/Shop";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ProfilePage from "./pages/ProfilePage";
